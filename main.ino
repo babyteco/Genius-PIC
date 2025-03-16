@@ -12,13 +12,11 @@
 #define LED_GREEN 8
 #define LED_BLUE 9
 #define LED_YELLOW 10
-#define BUZZER 11
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-
-int mode = 1;  // 1 = Normal, 2 = Inverso, 3 = Memória Extrema
+int mode = 1;
 int sequence[100], userInput[100];
-int seqLength = 3;  // Começa com 3 cores
+int seqLength = 3;
 unsigned long lastButtonPress = 0;
 
 void setup() {
@@ -26,9 +24,8 @@ void setup() {
     lcd.init();
     lcd.backlight();
 
-    for (int i = 2; i <= 12; i++) pinMode(i, INPUT_PULLUP);
+    for (int i = 2; i <= 10; i++) pinMode(i, INPUT_PULLUP);
     for (int i = 7; i <= 10; i++) pinMode(i, OUTPUT);
-    pinMode(BUZZER, OUTPUT);
 
     lcd.setCursor(0, 0);
     lcd.print("Modo: ");
@@ -39,12 +36,12 @@ void loop() {
     if (millis() - lastButtonPress > 300) {
         if (digitalRead(BUTTON_MODE) == LOW) {
             lastButtonPress = millis();
-            mode = (mode == 3) ? 1 : mode + 1; // Alterna entre os 3 modos
+            mode = (mode == 3) ? 1 : mode + 1;
             updateMode();
         }
         if (digitalRead(BUTTON_SELECT) == LOW) {
             lastButtonPress = millis();
-            seqLength = 3;  // Resetar a sequência inicial ao iniciar um novo jogo
+            seqLength = 3;
             startGame();
         }
     }
@@ -52,20 +49,23 @@ void loop() {
 
 void updateMode() {
     lcd.setCursor(6, 0);
+    lcd.print("                ");
+    lcd.setCursor(6, 0);
+    
     if (mode == 1) {
-        lcd.print("Normal     ");
+        lcd.print("Normal");
     } else if (mode == 2) {
-        lcd.print("Inverso    ");
+        lcd.print("Inverso");
     } else {
         lcd.print("Mem.Extrema");
     }
 }
 
 void startGame() {
-    while (true) {  // Continua jogando enquanto acerta
+    while (true) {
         generateSequence();
         showSequence();
-        delay(2000);  // Tempo de preparação antes do jogador começar
+        delay(2000);
 
         bool correct = (mode == 2) ? getPlayerInputReverse() : getPlayerInput();
 
@@ -79,14 +79,13 @@ void startGame() {
         lcd.print("Acertou!");
         delay(1000);
 
-        // Aumenta o tamanho da sequência
         if (mode == 3) {
-            seqLength += 2;  // Memória Extrema → Adiciona 2 cores por rodada
+            seqLength += 2;
         } else {
-            seqLength++;  // Normal e Inverso → Adiciona 1 cor por rodada
+            seqLength++;
         }
 
-        if (seqLength > 100) seqLength = 100; // Limite máximo
+        if (seqLength > 100) seqLength = 100;
 
         lcd.clear();
         lcd.setCursor(0, 0);
@@ -108,9 +107,9 @@ void showSequence() {
 
     for (int i = 0; i < seqLength; i++) {
         lightUpLED(sequence[i]);
-        delay(600); // Tempo de exibição da luz
+        delay(600);
         turnOffLEDs();
-        delay(300); // Intervalo entre luzes
+        delay(300);
     }
 
     lcd.clear();
@@ -120,12 +119,10 @@ void showSequence() {
 
 void lightUpLED(int num) {
     int leds[] = {LED_RED, LED_GREEN, LED_BLUE, LED_YELLOW};
-    int tones[] = {400, 600, 800, 1000};
     
     digitalWrite(leds[num - 1], HIGH);
-    tone(BUZZER, tones[num - 1]);
     delay(500);
-    noTone(BUZZER);
+    digitalWrite(leds[num - 1], LOW);
 }
 
 void turnOffLEDs() {
@@ -150,7 +147,7 @@ bool getPlayerInputReverse() {
 
 int waitForButtonPress() {
     unsigned long startTime = millis();
-    while (millis() - startTime < 10000) {  // Tempo aumentado para 10 segundos por jogada
+    while (millis() - startTime < 10000) {
         for (int i = 0; i < 4; i++) {
             int buttons[] = {BUTTON_RED, BUTTON_GREEN, BUTTON_BLUE, BUTTON_YELLOW};
             if (digitalRead(buttons[i]) == LOW) {
@@ -158,14 +155,13 @@ int waitForButtonPress() {
                 if (digitalRead(buttons[i]) == LOW) {
                     lightUpLED(i + 1);
                     delay(100);
-                    turnOffLEDs();
                     return i + 1;
                 }
             }
         }
         delay(10);
     }
-    return -1;  // Tempo esgotado
+    return -1;
 }
 
 void gameOver() {
@@ -175,10 +171,8 @@ void gameOver() {
 
     for (int i = 0; i < 3; i++) {
         for (int j = 7; j <= 10; j++) digitalWrite(j, HIGH);
-        tone(BUZZER, 200);
         delay(300);
         turnOffLEDs();
-        noTone(BUZZER);
         delay(300);
     }
 
